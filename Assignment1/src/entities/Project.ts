@@ -49,6 +49,7 @@ export class Project {
   )
   members!: ProjectMember[];
 
+  // W2 task: Project.tasks as @OneToMany to Task
   @OneToMany(() => Task, (task) => task.project)
   tasks!: Task[];
 }

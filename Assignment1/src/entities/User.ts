@@ -43,6 +43,7 @@ export class User {
   )
   projectMemberships!: ProjectMember[];
 
+  // W2 task: User.assignedTasks as inverse @OneToMany for nullable Task.assignee
   @OneToMany(() => Task, (task) => task.assignee)
   assignedTasks!: Task[];
 

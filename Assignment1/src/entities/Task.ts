@@ -78,6 +78,7 @@ export class Task {
   })
   createdAt!: Date;
 
+  // W2 task: Task.project as @ManyToOne to Project
   @ManyToOne(
     () => Project,
     (project) => project.tasks,
@@ -90,6 +91,7 @@ export class Task {
   })
   project!: Project;
 
+  // W2 task: Task.assignee as nullable @ManyToOne to User
   @ManyToOne(
     () => User,
     (user) => user.assignedTasks,
