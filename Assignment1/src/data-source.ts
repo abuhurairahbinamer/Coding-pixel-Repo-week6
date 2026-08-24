@@ -10,6 +10,7 @@ import { Task } from "./entities/Task";
 import { Tag } from "./entities/Tag";
 import { Comment } from "./entities/Comment";
 
+// W1 task: Create DataSource reading host, port, user, password, and db from .env with synchronize: false
 export const AppDataSource = new DataSource({
   type: "postgres",
 
@@ -19,7 +20,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
 
-  synchronize: false,
+  synchronize: false, // W1 task: synchronize set to false
   logging: false,
 
   entities: [
