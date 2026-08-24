@@ -1,0 +1,24 @@
+{
+  "name": "week6-assignment1-typeorm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CMIT Week 6 Assignment 1",
+  "scripts": {
+    "build": "tsc",
+    "typeorm": "typeorm-ts-node-commonjs -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate src/migrations/InitialSchema",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.26"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
