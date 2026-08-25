@@ -46,19 +46,19 @@ export class Task {
   })
   description!: string | null;
 
-  // @Column({
-  //   type: "enum",
-  //   enum: TaskStatus,
-  //   enumName: "tasks_status_enum",
-  //   nullable: true,
-  // })
-  // status!: TaskStatus | null;
+  @Column({
+    type: "enum",
+    enum: TaskStatus,
+    enumName: "tasks_status_enum",
+    nullable: true,
+  })
+  status!: TaskStatus | null;
   
-@Column({
-  type: "text",
-  nullable: true,
-})
-status!: TaskStatus | null;
+// @Column({
+//   type: "text",
+//   nullable: true,
+// })
+// status!: TaskStatus | null;
 
   @Column({
     type: "int",
