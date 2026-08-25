@@ -18,8 +18,9 @@ export class User {
 
   @Column({
     type: "text",
+    nullable: true,
   })
-  name!: string;
+  name!: string | null;
 
   @Column({
     type: "text",

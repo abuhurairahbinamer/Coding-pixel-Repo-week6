@@ -17,10 +17,19 @@ import { Tag } from "./Tag";
 import { Comment } from "./Comment";
 import { TaskStatus } from "./enums";
 
+// @Entity({ name: "tasks" })
+// @Check(
+//   "tasks_priority_check",
+//   '"priority" BETWEEN 1 AND 5',
+// )
 @Entity({ name: "tasks" })
 @Check(
+  "tasks_status_check",
+  `"status" IN ('todo', 'in_progress', 'done')`,
+)
+@Check(
   "tasks_priority_check",
-  '"priority" BETWEEN 1 AND 5',
+  `"priority" BETWEEN 1 AND 5`,
 )
 export class Task {
   @PrimaryGeneratedColumn()
@@ -37,13 +46,19 @@ export class Task {
   })
   description!: string | null;
 
-  @Column({
-    type: "enum",
-    enum: TaskStatus,
-    enumName: "tasks_status_enum",
-    nullable: true,
-  })
-  status!: TaskStatus | null;
+  // @Column({
+  //   type: "enum",
+  //   enum: TaskStatus,
+  //   enumName: "tasks_status_enum",
+  //   nullable: true,
+  // })
+  // status!: TaskStatus | null;
+  
+@Column({
+  type: "text",
+  nullable: true,
+})
+status!: TaskStatus | null;
 
   @Column({
     type: "int",

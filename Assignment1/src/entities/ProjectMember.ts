@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   Entity,
   JoinColumn,
@@ -10,7 +11,12 @@ import { User } from "./User";
 import { Project } from "./Project";
 import { ProjectRole } from "./enums";
 
+// @Entity({ name: "project_members" })
 @Entity({ name: "project_members" })
+@Check(
+  "project_members_role_check",
+  `"role" IN ('owner', 'admin', 'member', 'viewer')`,
+)
 export class ProjectMember {
   @PrimaryColumn({
     name: "user_id",
@@ -24,12 +30,16 @@ export class ProjectMember {
   })
   projectId!: number;
 
+  // @Column({
+  //   type: "enum",
+  //   enum: ProjectRole,
+  //   enumName: "project_members_role_enum",
+  // })
+  // role!: ProjectRole;
   @Column({
-    type: "enum",
-    enum: ProjectRole,
-    enumName: "project_members_role_enum",
-  })
-  role!: ProjectRole;
+  type: "text",
+})
+role!: ProjectRole;
 
   @ManyToOne(
     () => User,
