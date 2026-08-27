@@ -52,9 +52,8 @@ description!: string;
     type: "enum",
     enum: TaskStatus,
     // enumName: "tasks_status_enum",
-    nullable: true,
   })
-  status!: TaskStatus | null;
+  status!: TaskStatus;
   
 // @Column({
 //   type: "text",
@@ -64,9 +63,8 @@ description!: string;
 
   @Column({
     type: "int",
-    nullable: true,
   })
-  priority!: number | null;
+  priority!: number;
 
   @Column({
     name: "project_id",

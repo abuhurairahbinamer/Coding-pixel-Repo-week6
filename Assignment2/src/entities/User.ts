@@ -19,7 +19,7 @@ export class User {
   @Column({
     type: "text",
   })
-  name!: string | null;
+  name!: string;
 
   @Column({
     type: "text",
