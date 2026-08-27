@@ -139,3 +139,13 @@ npm run migration:generate -- src/migrations/YourMigrationName
 3. **Composite Primary Keys:** `ProjectMember` and `task_tags` use composite keys (`(user_id, project_id)` and `(task_id, tag_id)`) rather than surrogate IDs to guarantee relational integrity at the schema level.
 4. **Single-Sided Many-to-Many Declaration:** `@JoinTable` is placed solely on `Task.tags` to avoid duplicating join tables in PostgreSQL.
 5. **Database-Level Integrity:** Enum constraints and priority range bounds (`CHECK (priority BETWEEN 1 AND 5)`) are enforced directly inside PostgreSQL.
+
+
+
+# X3 Task
+PR description — 3–5 lines
+
+This migration makes tasks.description non-nullable using ALTER COLUMN SET NOT NULL.
+It is unsafe if any existing task has a NULL description because PostgreSQL will reject the migration.
+Before running it, existing NULL descriptions should be updated with an appropriate value.
+After the data is cleaned, the constraint can be applied without deleting existing rows.
