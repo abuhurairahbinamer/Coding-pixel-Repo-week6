@@ -93,7 +93,7 @@ description!: string;
   })
   createdAt!: Date;
 
-  // W2 task: Task.project as @ManyToOne to Project
+
   @ManyToOne(
     () => Project,
     (project) => project.tasks,
@@ -106,7 +106,7 @@ description!: string;
   })
   project!: Project;
 
-  // W2 task: Task.assignee as nullable @ManyToOne to User
+  
   @ManyToOne(
     () => User,
     (user) => user.assignedTasks,
@@ -124,6 +124,7 @@ description!: string;
   onDelete: "CASCADE",
   onUpdate: "NO ACTION",
 })
+// W1 task
   @JoinTable({
     name: "task_tags",
     joinColumn: {

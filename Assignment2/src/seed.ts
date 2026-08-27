@@ -30,7 +30,7 @@ export async function seedDatabase(): Promise<void> {
       const tagRepository = manager.getRepository(Tag);
       const taskRepository = manager.getRepository(Task);
       const commentRepository = manager.getRepository(Comment);
-
+    //W1 Task  
       const users = await userRepository.save(
         userRepository.create([
           { name: "Ali Khan", email: "ali@example.com" },
@@ -43,7 +43,7 @@ export async function seedDatabase(): Promise<void> {
       );
 
       const [ali, sara, usman, ayesha, hamza, fatima] = users;
-
+    // W1 Task
       const projects = await projectRepository.save(
         projectRepository.create([
           { name: "Task Management API", ownerId: ali.id },
@@ -53,7 +53,7 @@ export async function seedDatabase(): Promise<void> {
       );
 
       const [taskManagement, internPortal, futureProject] = projects;
-
+     // W1
       await projectMemberRepository.save(
         projectMemberRepository.create([
           {
@@ -106,7 +106,7 @@ export async function seedDatabase(): Promise<void> {
       );
 
       const [backend, database, urgent, frontend, bug, documentation] = tags;
-
+     // W1
       const tasks = await taskRepository.save(
         taskRepository.create([
           {
@@ -261,7 +261,7 @@ export async function seedDatabase(): Promise<void> {
           },
         ]),
       );
-
+      // W1 Task
       await commentRepository.save(
         commentRepository.create([
           {
