@@ -27,7 +27,7 @@ export class ProjectMember {
   @Column({
     type: "enum",
     enum: ProjectRole,
-    enumName: "project_members_role_enum",
+    // enumName: "project_members_role_enum",
   })
   role!: ProjectRole;
 

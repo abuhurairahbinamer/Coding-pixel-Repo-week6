@@ -10,7 +10,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-
+import { Index } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { Tag } from "./Tag";
@@ -23,6 +23,9 @@ import { TaskStatus } from "./enums";
 //   '"priority" BETWEEN 1 AND 5',
 // )
 @Entity({ name: "tasks" })
+@Index("idx_tasks_project_id", ["projectId"])
+@Index("idx_tasks_assignee_id", ["assigneeId"])
+@Index("idx_tasks_status", ["status"])
 @Check(
   "tasks_status_check",
   `"status" IN ('todo', 'in_progress', 'done')`,
@@ -49,7 +52,7 @@ export class Task {
   @Column({
     type: "enum",
     enum: TaskStatus,
-    enumName: "tasks_status_enum",
+    // enumName: "tasks_status_enum",
     nullable: true,
   })
   status!: TaskStatus | null;
