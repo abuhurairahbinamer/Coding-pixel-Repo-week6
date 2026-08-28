@@ -1,8 +1,8 @@
 import { AppDataSource } from "./data-source";
 import { Task } from "./entities/Task";
 import { User } from "./entities/User";
-import { TaskStatus } from "./entities/enums";
-
+import { ProjectRole, TaskStatus } from "./entities/enums";
+import { Project } from "./entities/Project";
 export type TaskStatusCount = {
   status: string;
   count: number;
@@ -13,11 +13,40 @@ export type UserTaskCount = {
   name: string;
   taskCount: number;
 };
-
+export type AverageTagsPerTask = {
+  averageTags: number;
+};
 export type UserCompletedCount = {
   userId: number;
   name: string;
   done: number;
+};
+export type TaskCommentCount = {
+  taskId: number;
+  title: string;
+  commentCount: number;
+};
+
+type RawProjectMemberRole = {
+  projectId: number;
+  projectName: string;
+  userId: number | null;
+  userName: string | null;
+  role: ProjectRole | null;
+};
+
+export type ProjectMemberRole = {
+  projectId: number;
+  projectName: string;
+  userId: number | null;
+  userName: string | null;
+  role: ProjectRole | null;
+};
+
+type RawTaskCommentCount = {
+  taskId: number;
+  title: string;
+  commentCount: string;
 };
 
 type RawTaskStatusCount = {
@@ -37,7 +66,11 @@ type RawUserCompletedCount = {
   done: string;
 };
 
-// Q1: Tasks for one project, due dates ascending and NULL dates last.
+type RawAverageTagsPerTask = {
+  averageTags: string | number | null;
+};
+
+//W2  Q1: Tasks for one project, due dates ascending and NULL dates last.
 export async function getTasksByProject(projectId: number): Promise<Task[]> {
   return AppDataSource.getRepository(Task)
     .createQueryBuilder("task")
@@ -47,7 +80,7 @@ export async function getTasksByProject(projectId: number): Promise<Task[]> {
     .getMany();
 }
 
-// Q2: Number of tasks in each status.
+// C1 Q2: Number of tasks in each status.
 export async function countTasksByStatus(): Promise<TaskStatusCount[]> {
   const rows = await AppDataSource.getRepository(Task)
     .createQueryBuilder("task")
@@ -63,7 +96,7 @@ export async function countTasksByStatus(): Promise<TaskStatusCount[]> {
   }));
 }
 
-// Q3: Every user, including users who have zero assigned tasks.
+//C2 Q3: Every user, including users who have zero assigned tasks.
 export async function getUsersWithTaskCounts(): Promise<UserTaskCount[]> {
   const rows = await AppDataSource.getRepository(User)
     .createQueryBuilder("user")
@@ -83,7 +116,7 @@ export async function getUsersWithTaskCounts(): Promise<UserTaskCount[]> {
   }));
 }
 
-// Q4: Tasks carrying the requested tag.
+//C3 Q4: Tasks carrying the requested tag.
 export async function getTasksByTag(tagName: string): Promise<Task[]> {
   return AppDataSource.getRepository(Task)
     .createQueryBuilder("task")
@@ -93,7 +126,7 @@ export async function getTasksByTag(tagName: string): Promise<Task[]> {
     .getMany();
 }
 
-// Q5: Overdue, unfinished, assigned tasks with the assignee loaded.
+//C3 Q5: Overdue, unfinished, assigned tasks with the assignee loaded.
 export async function getOverdueTasks(): Promise<Task[]> {
   return AppDataSource.getRepository(Task)
     .createQueryBuilder("task")
@@ -105,7 +138,7 @@ export async function getOverdueTasks(): Promise<Task[]> {
     .getMany();
 }
 
-// Q6: Users ordered by their number of completed tasks.
+//C4 Q6: Users ordered by their number of completed tasks.
 export async function getTopUsersByCompleted(
   limit: number,
 ): Promise<UserCompletedCount[]> {
@@ -131,5 +164,86 @@ export async function getTopUsersByCompleted(
     userId: Number(row.userId),
     name: row.name,
     done: Number(row.done),
+  }));
+}
+
+
+
+// Q7: Projects that have no tasks.
+export async function getProjectsWithoutTasks(): Promise<Project[]> {
+  return AppDataSource.getRepository(Project)
+    .createQueryBuilder("project")
+    .where((queryBuilder) => {
+      const taskExists = queryBuilder
+        .subQuery()
+        .select("1")
+        .from(Task, "task")
+        .where("task.projectId = project.id")
+        .getQuery();
+
+      return `NOT EXISTS ${taskExists}`;
+    })
+    .orderBy("project.id", "ASC")
+    .getMany();
+}
+
+// Q8: Average number of tags per task, including tasks with zero tags.
+export async function getAverageTagsPerTask(): Promise<AverageTagsPerTask> {
+  const row = await AppDataSource.getRepository(Task)
+    .createQueryBuilder("task")
+    .leftJoin("task.tags", "tag")
+    .select(
+      "COUNT(tag.id)::float / NULLIF(COUNT(DISTINCT task.id), 0)",
+      "averageTags",
+    )
+    .getRawOne<RawAverageTagsPerTask>();
+
+  return {
+    averageTags: row?.averageTags == null ? 0 : Number(row.averageTags),
+  };
+}
+
+// Q9: Number of comments per task, highest first, including zero.
+export async function getCommentsPerTask(): Promise<TaskCommentCount[]> {
+  const rows = await AppDataSource.getRepository(Task)
+    .createQueryBuilder("task")
+    .leftJoin("task.comments", "comment")
+    .select("task.id", "taskId")
+    .addSelect("task.title", "title")
+    .addSelect("COUNT(comment.id)", "commentCount")
+    .groupBy("task.id")
+    .addGroupBy("task.title")
+    .orderBy("COUNT(comment.id)", "DESC")
+    .addOrderBy("task.id", "ASC")
+    .getRawMany<RawTaskCommentCount>();
+
+  return rows.map((row) => ({
+    taskId: Number(row.taskId),
+    title: row.title,
+    commentCount: Number(row.commentCount),
+  }));
+}
+
+// Q10: Every project with its members and their roles.
+export async function getProjectsWithMembers(): Promise<ProjectMemberRole[]> {
+  const rows = await AppDataSource.getRepository(Project)
+    .createQueryBuilder("project")
+    .leftJoin("project.members", "membership")
+    .leftJoin("membership.user", "user")
+    .select("project.id", "projectId")
+    .addSelect("project.name", "projectName")
+    .addSelect("user.id", "userId")
+    .addSelect("user.name", "userName")
+    .addSelect("membership.role", "role")
+    .orderBy("project.id", "ASC")
+    .addOrderBy("user.id", "ASC")
+    .getRawMany<RawProjectMemberRole>();
+
+  return rows.map((row) => ({
+    projectId: Number(row.projectId),
+    projectName: row.projectName,
+    userId: row.userId == null ? null : Number(row.userId),
+    userName: row.userName,
+    role: row.role,
   }));
 }
