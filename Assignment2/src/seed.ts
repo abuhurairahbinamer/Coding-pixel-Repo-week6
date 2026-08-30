@@ -23,6 +23,7 @@ export async function seedDatabase(): Promise<void> {
   }
 
   try {
+    // X3: Wrap the entire seed in a transaction so a failure halfway through leaves the database untouched
     await AppDataSource.transaction(async (manager) => {
       const userRepository = manager.getRepository(User);
       const projectRepository = manager.getRepository(Project);
@@ -378,7 +379,7 @@ export async function seedDatabase(): Promise<void> {
         }
       }, Promise.resolve());
     });
-
+    //X3 throw new Error("X3 check")
     console.log("Seed completed successfully.");
   } finally {
     if (openedConnection && AppDataSource.isInitialized) {
