@@ -1,11 +1,17 @@
-# CMIT Internship Program — Week 6: Assignment 1
-## Task Management Domain — TypeORM Entities & Migrations
+# CMIT Internship Program — Week 6: Assignment 2
+## Task Management Domain — Seed & Typed Repository Queries
 
-A production-grade relational database schema for a Task Management platform built with **TypeScript**, **TypeORM**, and **PostgreSQL**. This project rebuilds the database domain using TypeORM entities, relations, composite keys, database-level constraints, and committed migrations with `synchronize: false`.
+A production-grade relational database and typed data layer for a Task Management platform built with **TypeScript**, **TypeORM**, and **PostgreSQL**. 
+
+This project implements:
+- Rebuilt Week 5 database schema using TypeORM entity classes and committed migrations (`synchronize: false`).
+- **Idempotent & Transaction-Wrapped Seeding** (`seed.ts`) meeting all minimum data volumes and edge cases.
+- **Strongly-Typed Repository & QueryBuilder Functions** (`queries.ts`) implementing queries **Q1 through Q10** with 100% strict TypeScript types and zero `any` annotations.
+- A query runner script (`run-queries.ts`) to execute and verify all queries against the database.
 
 ---
 
-## 📋 Overview & Domain Model
+## 📋 Domain Model & Entity Schema
 
 The domain models a multi-user task management workspace across **7 relational tables**:
 
@@ -29,123 +35,152 @@ erDiagram
 
 | Table | Primary Key | Key Columns & Types | Constraints / Rules |
 | :--- | :--- | :--- | :--- |
-| **`users`** | `id` (Serial) | `name` (text), `email` (text), `created_at` (timestamp) | `email` is `UNIQUE NOT NULL` |
-| **`projects`** | `id` (Serial) | `name` (text), `owner_id` (int), `created_at` (timestamp) | `owner_id` references `users(id)` (`ON DELETE RESTRICT`) |
+| **`users`** | `id` (Serial PK) | `name` (text), `email` (text), `created_at` (timestamp) | `email` is `UNIQUE NOT NULL` |
+| **`projects`** | `id` (Serial PK) | `name` (text), `owner_id` (int), `created_at` (timestamp) | `owner_id` references `users(id)` (`ON DELETE RESTRICT`) |
 | **`project_members`** | `(user_id, project_id)` (Composite PK) | `role` (enum: `owner`, `admin`, `member`, `viewer`) | Enforces "one role per user per project", cascades on delete |
-| **`tasks`** | `id` (Serial) | `title` (text), `description` (text, null), `status` (enum: `todo`, `in_progress`, `done`), `priority` (int, 1–5), `project_id` (int), `assignee_id` (int, null), `due_date` (date, null), `created_at` (timestamp) | `tasks_priority_check` (`CHECK (priority BETWEEN 1 AND 5)`), cascades on project delete, sets null on assignee delete |
-| **`tags`** | `id` (Serial) | `name` (text) | `name` is `UNIQUE NOT NULL` |
+| **`tasks`** | `id` (Serial PK) | `title` (text), `description` (text), `status` (enum: `todo`, `in_progress`, `done`), `priority` (int, 1–5), `project_id` (int), `assignee_id` (int, null), `due_date` (date, null), `created_at` (timestamp) | `tasks_priority_check` (`CHECK (priority BETWEEN 1 AND 5)`), `tasks_status_check`, cascades on project delete, sets null on assignee delete |
+| **`tags`** | `id` (Serial PK) | `name` (text) | `name` is `UNIQUE NOT NULL` |
 | **`task_tags`** | `(task_id, tag_id)` (Composite PK) | `task_id` (int), `tag_id` (int) | Many-to-Many join table with cascading foreign keys |
-| **`comments`** | `id` (Serial) | `task_id` (int), `author_id` (int), `body` (text), `created_at` (timestamp) | `task_id` references `tasks(id)` (`CASCADE`), `author_id` references `users(id)` (`RESTRICT`) |
-
----
-
-## 🛠️ Tech Stack
-
-- **Runtime:** Node.js
-- **Language:** TypeScript (`ES2022`, strict mode)
-- **ORM:** TypeORM `0.3.x`
-- **Database Driver:** `pg` (PostgreSQL)
-- **Configuration:** `dotenv`
+| **`comments`** | `id` (Serial PK) | `task_id` (int), `author_id` (int), `body` (text), `created_at` (timestamp) | `task_id` references `tasks(id)` (`CASCADE`), `author_id` references `users(id)` (`RESTRICT`) |
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-Assignment1/
+Assignment2/
 ├── src/
-│   ├── data-source.ts                  # TypeORM DataSource initialization (.env config)
+│   ├── data-source.ts                  # TypeORM DataSource configuration (synchronize: false)
+│   ├── seed.ts                         # W1/X2/X3: Idempotent, transaction-wrapped database seed
+│   ├── queries.ts                      # W2/C1-C4/X1: Typed queries Q1–Q10 using QueryBuilder
+│   ├── run-queries.ts                  # Query execution script to test and display results
 │   ├── entities/
 │   │   ├── Comment.ts                  # Comment entity definition
 │   │   ├── enums.ts                    # ProjectRole & TaskStatus enum definitions
 │   │   ├── Project.ts                  # Project entity definition
 │   │   ├── ProjectMember.ts            # Composite PK ProjectMember entity definition
 │   │   ├── Tag.ts                      # Tag entity definition
-│   │   ├── Task.ts                     # Task entity with checks, relations & join table
+│   │   ├── Task.ts                     # Task entity with checks, indexes, relations & join table
 │   │   └── User.ts                     # User entity definition
 │   └── migrations/
-│       └── 1787556886187-InitialSchema.ts # Committed migration (up & down)
+│       ├── 1787656797093-InitialSchema.ts          # Initial 7-table schema migration
+│       ├── 1787664050166-AddTaskIndexes.ts         # Performance indexes migration
+│       └── 1787807138183-MakeTaskDescriptionRequired.ts # Non-nullable description migration
 ├── .env.example                        # Template for database connection environment variables
-├── .gitignore                          # Ignored files (node_modules, dist, .env, logs)
-├── package.json                        # Dependencies and migration scripts
-├── tsconfig.json                       # TypeScript compiler options
-└── README.md                           # Documentation
+├── .gitignore                          # Git ignore configuration
+├── package.json                        # Scripts and dependencies
+├── tsconfig.json                       # TypeScript compiler configuration (strict mode)
+└── README.md                           # Project documentation
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [PostgreSQL](https://www.postgresql.org/) database server
+### 1. Prerequisites
+- **Node.js:** v18+ (Node 20+ recommended)
+- **PostgreSQL:** Running PostgreSQL database instance
 
-### 1. Installation
-Clone the repository and install dependencies:
+### 2. Installation
 ```bash
 npm install
 ```
 
-### 2. Environment Configuration
-Create a `.env` file from the example template:
+### 3. Environment Setup
+Create a `.env` file from the `.env.example` template:
 ```bash
 cp .env.example .env
 ```
-Update `.env` with your PostgreSQL database credentials:
+
+Configure your PostgreSQL credentials in `.env`:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_USERNAME=your_db_user
-DB_PASSWORD=your_db_password
-DB_DATABASE=your_db_name
+DB_USERNAME=your_postgres_username
+DB_PASSWORD=your_postgres_password
+DB_DATABASE=your_database_name
 ```
 
-### 3. Build & Typecheck
-Ensure all TypeScript definitions compile without errors:
-```bash
-npm run build
-```
-
----
-
-## 🗄️ Database Migrations
-
-In accordance with production safety best practices, **`synchronize: false`** is strictly enforced. All schema changes are applied through versioned migrations.
-
-### Run Migrations (`up`)
-Applies pending migrations to the database and builds the 7-table schema, custom enum types, composite keys, and foreign key constraints:
+### 4. Run Migrations
+Build the schema on an empty database:
 ```bash
 npm run migration:run
 ```
 
-### Revert Migrations (`down`)
-Rolls back the latest migration, cleanly dropping foreign keys, indexes, tables, and enums in safe reverse order:
+---
+
+## 🌱 Database Seeding (`src/seed.ts`)
+
+Run the seed script to populate initial test data:
 ```bash
-npm run migration:revert
+npm run seed
 ```
 
-### Generate a New Migration
-If entities are modified, generate a new migration file:
-```bash
-npm run migration:generate -- src/migrations/YourMigrationName
-```
+### Seeding Features & Validation:
+- **Minimum Data Volumes:**
+  - 6 Users
+  - 3 Projects
+  - 7 Project Memberships (covering `owner`, `admin`, `member`, `viewer` roles)
+  - 6 Tags
+  - 15 Tasks
+  - 20 Task-Tag relationships
+  - 10 Comments
+- **Special Edge Cases Included:**
+  1. At least one task with no assignee (`Write setup guide`, `assigneeId: null`).
+  2. Overdue tasks past due date that are not done (Tasks with past due dates and `todo` or `in_progress` status).
+  3. One project with zero tasks (`Future Project`).
+  4. One user with zero assigned tasks (`Fatima Raza`).
+- **Challenge X2 (Idempotency):**
+  Uses find-or-create logic on natural keys (`email`, `name`, composite IDs, etc.) with sequential `.reduce()` execution. Running `npm run seed` multiple times leaves the database in the exact same state without unique constraint errors.
+- **Challenge X3 (Transaction Safety):**
+  Wrapped entirely inside `AppDataSource.transaction(async (manager) => { ... })` so that a failure halfway through triggers a full rollback and leaves the database untouched.
 
 ---
 
-## 🔒 Key Design Decisions
+## 🔍 Typed Queries (`src/queries.ts`)
 
-1. **Explicit Migrations over Auto-Synchronization:** `synchronize: false` ensures zero accidental data destruction in development and production environments.
-2. **Environment Isolation:** Database credentials are never hardcoded and are loaded strictly at runtime through `process.env`.
-3. **Composite Primary Keys:** `ProjectMember` and `task_tags` use composite keys (`(user_id, project_id)` and `(task_id, tag_id)`) rather than surrogate IDs to guarantee relational integrity at the schema level.
-4. **Single-Sided Many-to-Many Declaration:** `@JoinTable` is placed solely on `Task.tags` to avoid duplicating join tables in PostgreSQL.
-5. **Database-Level Integrity:** Enum constraints and priority range bounds (`CHECK (priority BETWEEN 1 AND 5)`) are enforced directly inside PostgreSQL.
+Execute all queries and view formatted output:
+```bash
+npm run queries
+```
 
+### Summary of Implemented Queries:
 
+| Problem | Query | Function Signature | Description |
+| :--- | :---: | :--- | :--- |
+| **W2** | **Q1** | `getTasksByProject(projectId: number): Promise<Task[]>` | Returns tasks for a project ordered by due date ascending with `NULLS LAST`. |
+| **C1** | **Q2** | `countTasksByStatus(): Promise<TaskStatusCount[]>` | Aggregates and counts tasks per status using `QueryBuilder`, converting count to runtime numbers. |
+| **C2** | **Q3** | `getUsersWithTaskCounts(): Promise<UserTaskCount[]>` | Uses `LEFT JOIN` so users with 0 tasks (e.g., Fatima) appear with `taskCount: 0`. |
+| **C3** | **Q4** | `getTasksByTag(tagName: string): Promise<Task[]>` | Reads tasks carrying a specific tag using bound parameter `:tagName`. |
+| **C3** | **Q5** | `getOverdueTasks(): Promise<Task[]>` | Filters for overdue, non-done tasks with the eager `assignee` relation loaded. |
+| **C4** | **Q6** | `getTopUsersByCompleted(limit: number): Promise<UserCompletedCount[]>` | Filters `status = 'done'` before grouping, ordered descending by done count. |
+| **X1** | **Q7** | `getProjectsWithoutTasks(): Promise<Project[]>` | Searches for absence using a subquery with `NOT EXISTS`. |
+| **X1** | **Q8** | `getAverageTagsPerTask(): Promise<AverageTagsPerTask>` | Calculates tags per task with a `LEFT JOIN` so tasks with 0 tags are counted in the average. |
+| **X1** | **Q9** | `getCommentsPerTask(): Promise<TaskCommentCount[]>` | Groups comments per task ordered descending, including 0-comment tasks. |
+| **X1** | **Q10** | `getProjectsWithMembers(): Promise<ProjectMemberRole[]>` | Lists all projects along with their assigned members and role enums. |
 
-# X3 Task
-PR description — 3–5 lines
+---
 
-This migration makes tasks.description non-nullable using ALTER COLUMN SET NOT NULL.
-It is unsafe if any existing task has a NULL description because PostgreSQL will reject the migration.
-Before running it, existing NULL descriptions should be updated with an appropriate value.
-After the data is cleaned, the constraint can be applied without deleting existing rows.
+## 🛡️ Type Safety & Strict Verification
+
+Type check the entire codebase with zero errors:
+```bash
+npm run typecheck
+```
+
+- **Strict Mode Enabled:** `"strict": true` configured in `tsconfig.json`.
+- **Zero `any` Annotations:** All query return shapes and raw query results are strictly typed with declared interfaces (`RawTaskStatusCount`, `RawUserTaskCount`, `RawUserCompletedCount`, `RawAverageTagsPerTask`, `RawTaskCommentCount`, `RawProjectMemberRole`).
+- **PostgreSQL Aggregate Casting:** String numbers from Postgres raw aggregates are explicitly mapped to JavaScript `number` types at runtime.
+
+---
+
+## 📜 Available NPM Scripts
+
+| Script | Command | Description |
+| :--- | :--- | :--- |
+| `npm run typecheck` | `tsc --noEmit` | Runs strict TypeScript compiler typecheck. |
+| `npm run build` | `tsc` | Compiles TypeScript source to `dist/`. |
+| `npm run migration:run` | `typeorm-ts-node-commonjs migration:run` | Applies pending migrations to the database. |
+| `npm run migration:revert`| `typeorm-ts-node-commonjs migration:revert` | Rolls back the latest applied migration. |
+| `npm run seed` | `ts-node src/seed.ts` | Runs the idempotent, transaction-wrapped database seed. |
+| `npm run queries` | `ts-node src/run-queries.ts` | Runs and logs all typed query results (Q1–Q10). |
